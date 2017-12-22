@@ -1,5 +1,7 @@
 ATM - Auto Tune Models
 ====
+Docs available here: https://hdi-project.github.io/ATM/intro.html
+
 ATM is an open source software library under ["The human data interaction project"](https://hdi-dai.lids.mit.edu/) at MIT.  It is a distributed scalable AutoML system designed with ease of use in mind. ATM takes in data with pre-extracted feature vectors and labels (target column) in a simple CSV file format. It attempts to learn several classifiers (machine learning models to predict the label) in parallel. In the end, ATM returns a number of classifiers and the best classifier with a specified set of hyperparameters. 
 
 ## Current status
