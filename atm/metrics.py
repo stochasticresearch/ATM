@@ -2,7 +2,8 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from sklearn.metrics import f1_score, precision_recall_curve, auc, roc_curve,\
                             accuracy_score, cohen_kappa_score, roc_auc_score,\
-                            average_precision_score, matthews_corrcoef
+                            average_precision_score, matthews_corrcoef,\
+                            confusion_matrix
 
 import numpy as np
 import pandas as pd
@@ -70,6 +71,7 @@ def get_metrics_binary(y_true, y_pred, y_pred_probs, include_curves=False):
         Metrics.COHEN_KAPPA: cohen_kappa_score(y_true, y_pred),
         Metrics.F1: f1_score(y_true, y_pred),
         Metrics.MCC: matthews_corrcoef(y_true, y_pred),
+        Metrics.CONFUSION_MATRIX: confusion_matrix(y_true, y_pred),
         Metrics.ROC_AUC: np.nan,
         Metrics.AP: np.nan,
     }
@@ -98,6 +100,7 @@ def get_metrics_multiclass(y_true, y_pred, y_pred_probs, rank_accuracy=False,
         Metrics.COHEN_KAPPA: cohen_kappa_score(y_true, y_pred),
         Metrics.F1_MICRO: f1_score(y_true, y_pred, average='micro'),
         Metrics.F1_MACRO: f1_score(y_true, y_pred, average='macro'),
+        Metrics.CONFUSION_MATRIX: confusion_matrix(y_true, y_pred),
         Metrics.ROC_AUC_MICRO: np.nan,
         Metrics.ROC_AUC_MACRO: np.nan,
         Metrics.RANK_ACCURACY: np.nan,

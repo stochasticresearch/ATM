@@ -96,6 +96,7 @@ class Metrics:
     MCC = 'mcc'             # matthews correlation coefficient
     PR_CURVE = 'pr_curve'
     ROC_CURVE = 'roc_curve'
+    CONFUSION_MATRIX = 'confusion_matrix'
 
 METRICS_BINARY = [
     Metrics.ACCURACY,
@@ -104,6 +105,7 @@ METRICS_BINARY = [
     Metrics.ROC_AUC,
     Metrics.AP,
     Metrics.MCC,
+    Metrics.CONFUSION_MATRIX,
 ]
 
 METRICS_MULTICLASS = [
@@ -114,6 +116,7 @@ METRICS_MULTICLASS = [
     Metrics.F1_MACRO,
     Metrics.ROC_AUC_MICRO,
     Metrics.ROC_AUC_MACRO,
+    Metrics.CONFUSION_MATRIX,
 ]
 
 METRICS = list(set(METRICS_BINARY + METRICS_MULTICLASS))
