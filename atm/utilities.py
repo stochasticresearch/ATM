@@ -181,7 +181,7 @@ def make_save_path(dir, classifier, suffix):
     """
     run_name = "".join([c for c in classifier.datarun.dataset.name
                         if c.isalnum() or c in (' ', '-', '_')]).rstrip()
-    params_hash = hash_dict(classifier.params)[:8]
+    params_hash = hash_dict(classifier.hyperparameter_values)[:8]
     filename = "%s-%s.%s" % (run_name, params_hash, suffix)
     return os.path.join(dir, filename)
 
