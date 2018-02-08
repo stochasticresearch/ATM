@@ -15,10 +15,10 @@ from atm.worker import work
 from utilities import *
 
 
-CONF_DIR = os.path.join(PROJECT_ROOT, 'config/test/method/')
+CONF_DIR = os.path.join(PROJECT_ROOT, 'config/test/')
 DATA_DIR = os.path.join(PROJECT_ROOT, 'data/test/')
-RUN_CONFIG = join(CONF_DIR, 'run.yaml')
-SQL_CONFIG = join(CONF_DIR, 'sql.yaml')
+RUN_CONFIG = join(CONF_DIR, 'run-default.yaml')
+SQL_CONFIG = join(CONF_DIR, 'sql-sqlite.yaml')
 DATASETS = [
     'iris.data.csv',
     'pollution_1.csv',
@@ -36,8 +36,8 @@ parser.add_argument('--method', help='code for method to test')
 parser.add_argument('--method-path', help='path to JSON config for method to test')
 
 args = parser.parse_args()
-sql_config, run_config, aws_config = load_config(sql_path=SQL_CONFIG,
-                                                 run_path=RUN_CONFIG)
+sql_config, run_config, aws_config, _ = load_config(sql_path=SQL_CONFIG,
+                                                    run_path=RUN_CONFIG)
 db = Database(**vars(sql_config))
 
 print('creating dataruns...')

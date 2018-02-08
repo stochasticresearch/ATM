@@ -1,20 +1,18 @@
-from __future__ import print_function
-import argparse
+from __future__ import absolute_import
+
+import logging
 import os
-import warnings
-import yaml
-
 from datetime import datetime, timedelta
-from boto.s3.connection import S3Connection, Key as S3Key
 
-from atm.config import *
-from atm.constants import *
-from atm.database import Database
-from atm.encoder import MetaData
-from atm.method import Method
-from atm.utilities import ensure_directory, hash_nested_tuple, download_data
+from .config import *
+from .constants import *
+from .database import Database
+from .encoder import MetaData
+from .method import Method
+from .utilities import download_data
 
-warnings.filterwarnings("ignore")
+# load the library-wide logger
+logger = logging.getLogger('atm')
 
 
 def create_dataset(db, run_config, aws_config=None):
@@ -61,7 +59,7 @@ def create_datarun(db, dataset, run_config):
     run_config: RunConfig object describing the datarun to create
     """
     # describe the datarun by its tuner and selector
-    run_description =  '__'.join([run_config.tuner, run_config.selector])
+    run_description = '__'.join([run_config.tuner, run_config.selector])
 
     # set the deadline, if applicable
     deadline = run_config.deadline
@@ -120,15 +118,16 @@ def enter_data(sql_config, run_config, aws_config=None,
         # enumerate all combinations of categorical variables for this method
         method = Method(m)
         method_parts[m] = method.get_hyperpartitions()
-        print('method', m, 'has', len(method_parts[m]), 'hyperpartitions')
+        logger.info('method %s has %d hyperpartitions' %
+                    (m, len(method_parts[m])))
 
     # create hyperpartitions and datarun(s)
     run_ids = []
     if not run_per_partition:
-        print('saving datarun...')
+        logger.debug('saving datarun...')
         datarun = create_datarun(db, dataset, run_config)
 
-    print('saving hyperpartions...')
+    logger.debug('saving hyperpartions...')
     for method, parts in method_parts.items():
         for part in parts:
             # if necessary, create a new datarun for each hyperpartition.
@@ -145,48 +144,16 @@ def enter_data(sql_config, run_config, aws_config=None,
                                      categoricals=part.categoricals,
                                      status=PartitionStatus.INCOMPLETE)
 
-    print('done!')
-    print()
-    print('========== Summary ==========')
-    print('Dataset ID:', dataset.id)
-    print('Training data:', dataset.train_path)
-    print('Test data:', (dataset.test_path or '(None)'))
+    logger.info('Data entry complete. Summary:')
+    logger.info('\tDataset ID: %d' % dataset.id)
+    logger.info('\tTraining data: %s' % dataset.train_path)
+    logger.info('\tTest data: %s' % (dataset.test_path or 'None'))
     if run_per_partition:
-        print('Datarun IDs:', ', '.join(map(str, run_ids)))
+        logger.info('\tDatarun IDs: %s' % ', '.join(map(str, run_ids)))
     else:
-        print('Datarun ID:', datarun.id)
-    print('Hyperpartition selection strategy:', datarun.selector)
-    print('Parameter tuning strategy:', datarun.tuner)
-    print('Budget: %d (%s)' % (datarun.budget, datarun.budget_type))
-    print()
+        logger.info('\tDatarun ID: %d' % datarun.id)
+    logger.info('\tHyperpartition selection strategy: %s' % datarun.selector)
+    logger.info('\tParameter tuning strategy: %s' % datarun.tuner)
+    logger.info('\tBudget: %d (%s)' % (datarun.budget, datarun.budget_type))
 
     return run_ids or datarun.id
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="""
-Creates a dataset (if necessary) and a datarun and adds them to the ModelHub.
-All required arguments have default values. Running this script with no
-arguments will create a new dataset with the file in data/pollution_1.csv and a
-new datarun with the default arguments listed below.
-
-You can pass yaml configuration files (--sql-config, --aws-config, --run-config)
-instead of passing individual arguments. Any arguments in the config files will
-override arguments passed on the command line. See the examples in the config/
-folder for more information. """)
-    # Add argparse arguments for aws, sql, and datarun config
-    add_arguments_aws_s3(parser)
-    add_arguments_sql(parser)
-    add_arguments_datarun(parser)
-    parser.add_argument('--run-per-partition', default=False, action='store_true',
-                        help='if set, generate a new datarun for each hyperpartition')
-
-    args = parser.parse_args()
-
-    # create config objects from the config files and/or command line args
-    sql_config, run_config, aws_config = load_config(sql_path=args.sql_config,
-                                                     run_path=args.run_config,
-                                                     aws_path=args.aws_config,
-                                                     **vars(args))
-    # create and save the dataset and datarun
-    enter_data(sql_config, run_config, aws_config, args.run_per_partition)

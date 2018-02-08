@@ -1,24 +1,29 @@
-from __future__ import print_function
-import json
-import pickle
-import urllib2
-import hashlib
-import numpy as np
-import os
-import base64
-import re
+from __future__ import absolute_import
 
-from boto.s3.connection import S3Connection, Key
+import base64
+import hashlib
+import json
+import logging
+import os
+import pickle
+import re
+import urllib2
+
+import numpy as np
+from boto.s3.connection import Key, S3Connection
+
+from .constants import *
 
 from btb import ParamTypes
-from atm.constants import *
 
 # global variable storing this machine's public IP address
 # (so we only have to fetch it once)
 public_ip = None
 
 # URL which should give us our public-facing IP address
-PUBLIC_IP_URL = "http://ip.42.pl/raw"
+PUBLIC_IP_URL = 'http://ip.42.pl/raw'
+
+logger = logging.getLogger('atm')
 
 
 def hash_dict(dictionary, ignored_keys=None):
@@ -63,7 +68,7 @@ def get_public_ip():
             if match:
                 public_ip = match.group()
         except Exception as e:  # any exception, doesn't matter what
-            print('could not get public IP:', e)
+            logger.error('could not get public IP:', e)
             public_ip = 'localhost'
 
     return public_ip
@@ -168,7 +173,7 @@ def _make_save_path_old(dir, classifier, suffix):
     based on the classifier's dataset name and hyperparameters.
     """
     run_hash = hash_string(classifier.datarun.dataset.name)
-    params_hash = hash_dict(classifier.params)
+    params_hash = hash_dict(classifier.hyperparameter_values)
     filename = "%s-%s-%s.%s" % (run_hash, params_hash,
                                 classifier.datarun.description, suffix)
     return os.path.join(dir, filename)
@@ -193,7 +198,7 @@ def save_model(classifier, model_dir, model):
     attributes.
     """
     path = make_save_path(model_dir, classifier, 'model')
-    print('Saving model in: %s' % path)
+    logger.info('Saving model in: %s' % path)
     with open(path, 'wb') as f:
         pickle.dump(model, f, protocol=pickle.HIGHEST_PROTOCOL)
     return path
@@ -206,7 +211,7 @@ def save_metrics(classifier, metric_dir, metrics):
     the classifier's attributes.
     """
     path = make_save_path(metric_dir, classifier, 'metric')
-    print('Saving metrics in: %s' % path)
+    logger.info('Saving metrics in: %s' % path)
     with open(path, 'w') as f:
         json.dump(metrics, f)
     return path
@@ -239,7 +244,6 @@ def get_local_data_path(data_path):
     m = re.match(S3_PREFIX, data_path)
     if m:
         path = data_path[len(m.group()):].split('/')
-        bucket = path.pop(0)
         return os.path.join(DATA_DL_PATH, path[-1]), FileType.S3
 
     m = re.match(HTTP_PREFIX, data_path)
@@ -267,7 +271,7 @@ def download_file_s3(aws_path, aws_config, local_folder=DATA_DL_PATH):
         path = keyname
 
     if os.path.isfile(path):
-        print('file %s already exists!' % path)
+        logger.warning('file %s already exists!' % path)
         return path
 
     conn = S3Connection(aws_config.access_key, aws_config.secret_key)
@@ -278,10 +282,11 @@ def download_file_s3(aws_path, aws_config, local_folder=DATA_DL_PATH):
     else:
         aws_keyname = keyname
 
-    print('downloading data from S3...')
+    logger.debug('downloading data from S3...')
     s3key = Key(bucket)
     s3key.key = aws_keyname
     s3key.get_contents_to_filename(path)
+    logger.info('file saved at %s' % path)
 
     return path
 
@@ -296,14 +301,15 @@ def download_file_http(url, local_folder=DATA_DL_PATH):
         path = filename
 
     if os.path.isfile(path):
-        print('file %s already exists!' % path)
+        logger.warning('file %s already exists!' % path)
         return path
 
-    print('downloading data from %s...' % url)
+    logger.debug('downloading data from %s...' % url)
     f = urllib2.urlopen(url)
     data = f.read()
-    with open(path, "wb") as outfile:
+    with open(path, 'wb') as outfile:
         outfile.write(data)
+    logger.info('file saved at %s' % path)
 
     return path
 
